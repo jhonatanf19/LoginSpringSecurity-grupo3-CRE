@@ -1,6 +1,7 @@
 package com.grupo3.login.controller;
 
 import com.grupo3.login.dto.UsuarioLoginDTO;
+import com.grupo3.login.model.Usuario;
 import com.grupo3.login.service.UsuarioService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,22 +17,30 @@ public class UsuarioController {
     private UsuarioService usuarioService;
 
     @PostMapping("/login")
-    public ResponseEntity<String> login(@Valid @RequestBody UsuarioLoginDTO loginDTO) {
-
+    public ResponseEntity<String> login (@Valid @RequestBody UsuarioLoginDTO loginDTO) {
+        // Ejecuta la lógica de validación de identidad y credenciales en la capa de servicio
         String resultado = usuarioService.autenticar(loginDTO.getEmail(), loginDTO.getPassword());
-
-        // Si el resultado es el error de bloqueo, lo mostramos tal cual (RF-07/RF-08)
-        if (resultado.contains("bloqueada")) {
+        // Si la cuenta está suspendida, se deniega el acceso con un estado 403 Forbidden
+        if (resultado.contains("Cuenta bloqueada")) {
             return ResponseEntity.status(403).body(resultado);
         }
-
-        // Para cualquier otro error (email mal, clave mal, etc.), mensaje GENÉRICO (RF-05)
-        if (resultado.contains("Error")) {
-            return ResponseEntity.badRequest().body("Error: El correo o la contraseña son incorrectos.");
+        // Si el mensaje NO contiene "Bienvenido", asumimos que es un error de login (400)
+        // Esto atrapará tanto el "No estás registrado" como los "intentos restantes"
+        if (!resultado.contains("Bienvenido")) {
+            return ResponseEntity.badRequest().body(resultado);
         }
-
-        // Si todo sale bien
+        // Autenticación exitosa: confirma el acceso del usuario con un estado 200 OK
         return ResponseEntity.ok(resultado);
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<String> logout() {
+        // 1. Limpiamos el rastro de la sesión en el servidor
+        // Esto es fundamental para "Finalizar la sesión de forma segura" como pide tu Word
+        org.springframework.security.core.context.SecurityContextHolder.clearContext();
+
+        // 2. Retornamos la respuesta exitosa para Postman
+        return ResponseEntity.ok("Sesión cerrada exitosamente.");
     }
 
     // RF-05: Captura errores de validación de campos (ej: email vacío o mal formato)

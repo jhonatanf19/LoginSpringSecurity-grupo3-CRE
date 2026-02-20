@@ -9,30 +9,30 @@ import org.springframework.security.web.SecurityFilterChain;
 @Configuration
 public class SecurityConfig {
 
+    // Define el algoritmo de hash BCrypt para la protección y comparación de contraseñas
     @Bean
     public BCryptPasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
 
+    // Configura la cadena de filtros de seguridad para gestionar el acceso a las rutas
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-                .csrf(csrf -> csrf.disable()) // Mantener deshabilitado para Postman
+                // Deshabilita la protección CSRF para facilitar el envío de peticiones desde Postman
+                .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
-                        // 1. Permitimos al Admin registrar (Tu AdminController)
-                        .requestMatchers("/api/admin/usuarios/**").permitAll()
-
-                        // 2. Permitimos a los usuarios loguearse (Tu nuevo UsuarioController)
-                        .requestMatchers("/api/usuarios/login/**").permitAll()
-
-                        // 3. Cualquier otra ruta requerirá estar autenticado
+                        // Permite el acceso libre a los endpoints de administración de usuarios
+                        .requestMatchers("/api/administrador/**").permitAll()
+                        // Habilita el acceso público al endpoint de autenticación para el inicio de sesión
+                        .requestMatchers("/api/usuarios/**").permitAll()
+                        // Restringe cualquier otra ruta del sistema; requiere una sesión autenticada
                         .anyRequest().authenticated()
                 )
-                // Como estamos usando controladores manuales para el login,
-                // podemos simplificar o comentar el formLogin por ahora si solo usas Postman
+                // Desactiva el formulario de inicio de sesión por defecto de Spring para usar controladores personalizados
                 .formLogin(form -> form.disable())
+                // Configura el cierre de sesión permitiendo el acceso global a esta funcionalidad
                 .logout(logout -> logout.permitAll());
-
         return http.build();
     }
 
