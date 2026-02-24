@@ -12,8 +12,4 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
     // Devuelve un Optional para gestionar de forma segura los casos donde el email no existe
     Optional<Usuario> findByEmail (String email);
 
-    // Permite recuperar un usuario asociado a un token de seguridad específico
-    // Es esencial para validar la identidad en procesos de recuperación de cuenta
-    Optional<Usuario> findByTokenRecuperacion(String token);
-
 }

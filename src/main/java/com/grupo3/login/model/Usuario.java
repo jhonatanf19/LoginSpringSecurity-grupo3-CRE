@@ -30,13 +30,9 @@ public class Usuario {
     private Roles rol; // El Admin decidirá esto
 
     @Column(name = "intentos_fallidos")
-    private int intentosFallidos = 0; // Para el RF-07
+    private int intentosFallidos = 0;
 
     @Column(name = "cuenta_bloqueada")
-    private boolean cuentaBloqueada = false; // Para el RF-08
-
-    // Aquí guardaremos el código temporal cuando el usuario pida recuperar su clave
-    @Column(name = "token_recuperacion")
-    private String tokenRecuperacion; // Para el RF-06
+    private boolean cuentaBloqueada = false;
 
 }

@@ -3,6 +3,7 @@ package com.grupo3.login.service;
 import com.grupo3.login.model.Usuario;
 import com.grupo3.login.repository.UsuarioRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import java.util.List;
@@ -15,7 +16,6 @@ public class UsuarioService {
     private UsuarioRepository usuarioRepository;
     @Autowired
     private BCryptPasswordEncoder passwordEncoder;
-
 
     public Optional<Usuario> buscarPorEmail (String email) {
         // Busca el email del usuario para autenticarse o registrarse
@@ -77,12 +77,12 @@ public class UsuarioService {
         usuarioRepository.save(usuario);
     }
 
-    public List<Usuario> listarTodosUsuarios() {
+    public List<Usuario> listarTodosUsuarios () {
         // Muestra los campos de todos los usuarios registrados
         return usuarioRepository.findAll();
     }
 
-    public Usuario desbloquearUsuario(Long id) {
+    public Usuario desbloquearUsuario (Long id) {
         // Busca al usuario por su ID para proceder con la reactivación de su cuenta
         Usuario usuario = usuarioRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("No se econtró al usuario con su ID"));
@@ -95,6 +95,11 @@ public class UsuarioService {
         usuario.setIntentosFallidos(0);
         // Guarda el cambio del registro en la base de datos y retorna el usuario habilitado
         return usuarioRepository.save(usuario);
+    }
+
+    public void cerrarSesionActiva() {
+        // Elimina la identidad del usuario del sistema para invalidar su acceso
+        SecurityContextHolder.clearContext();
     }
 
 }

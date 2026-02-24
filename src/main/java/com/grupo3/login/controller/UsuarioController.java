@@ -3,13 +3,20 @@ package com.grupo3.login.controller;
 import com.grupo3.login.dto.UsuarioLoginDTO;
 import com.grupo3.login.model.Usuario;
 import com.grupo3.login.service.UsuarioService;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
+@CrossOrigin(origins = "http://localhost:4200")
 @RequestMapping("/api/usuarios")
 public class UsuarioController {
 
@@ -34,19 +41,14 @@ public class UsuarioController {
     }
 
     @PostMapping("/logout")
-    public ResponseEntity<String> logout() {
-        // 1. Limpiamos el rastro de la sesión en el servidor
-        // Esto es fundamental para "Finalizar la sesión de forma segura" como pide tu Word
-        org.springframework.security.core.context.SecurityContextHolder.clearContext();
-
-        // 2. Retornamos la respuesta exitosa para Postman
-        return ResponseEntity.ok("Sesión cerrada exitosamente.");
-    }
-
-    // RF-05: Captura errores de validación de campos (ej: email vacío o mal formato)
-    @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<String> handleValidationErrors(MethodArgumentNotValidException ex) {
-        return ResponseEntity.badRequest().body("Error: El correo o la contraseña son incorrectos.");
+    public ResponseEntity<String> logout(HttpSession session) {
+        // Mandamos la orden al servicio para limpiar la identidad del usuario
+        usuarioService.cerrarSesionActiva();
+        if (session != null) {
+            session.invalidate(); // Rompe la sesión y borra todos sus datos vinculados
+        }
+        // Respondemos que todo salió bien
+        return ResponseEntity.ok("Sesión cerrada exitosamente");
     }
 
 }
