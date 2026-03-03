@@ -7,8 +7,8 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 
-@Configuration
-@EnableWebSecurity
+@Configuration // Indica que esta clase contiene definiciones de beans para el contexto de Spring
+@EnableWebSecurity // Habilita la seguridad web personalizada para proteger los endpoints de la API
 public class SecurityConfig {
 
     // Define el algoritmo de hash BCrypt para la protección y comparación de contraseñas
@@ -21,7 +21,7 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-                // Deshabilita la protección CSRF para facilitar el envío de peticiones desde Postman
+                // Deshabilita la protección CSRF para facilitar el envío de peticiones desde Postman/React
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
                         // Permite el acceso libre a los endpoints de administración de usuarios
@@ -35,17 +35,6 @@ public class SecurityConfig {
                 )
                 // Desactiva el formulario de inicio de sesión por defecto de Spring para usar controladores personalizados
                 .formLogin(form -> form.disable())
-                // Configura el cierre de sesión permitiendo el acceso global a esta funcionalidad
-                /*.logout(logout -> logout
-                        // Indicamos la ruta exacta que definimos en el Controlador
-                        .logoutUrl("/api/usuarios/logout")
-                        // Al cerrar sesión, eliminamos la cookie del navegador para no dejar rastro
-                        .deleteCookies("JSESSIONID")
-                        // Invalidamos la sesión actual en el servidor por seguridad
-                        .invalidateHttpSession(true)
-                        // Permitimos que cualquier usuario acceda a esta ruta para salir del sistema
-                        .permitAll()
-                );*/
                 .logout(logout -> logout.disable());
         return http.build();
     }

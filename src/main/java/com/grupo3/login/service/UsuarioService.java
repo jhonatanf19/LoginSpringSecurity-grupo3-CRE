@@ -9,16 +9,18 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.Optional;
 
-@Service
+@Service // Define esta clase como la capa de lógica de negocio.
 public class UsuarioService {
 
-    @Autowired
+    @Autowired // Inyecta el repositorio para interactuar con la base de datos
     private UsuarioRepository usuarioRepository;
-    @Autowired
+    @Autowired // Inyecta el codificador para manejar contraseñas de forma segura
     private BCryptPasswordEncoder passwordEncoder;
+
 
     public Optional<Usuario> buscarPorEmail (String email) {
         // Busca el email del usuario para autenticarse o registrarse
+        // Devuelve un Optional para evitar errores de nulos
         return usuarioRepository.findByEmail(email);
     }
 
@@ -27,7 +29,7 @@ public class UsuarioService {
         if (buscarPorEmail(usuario.getEmail()).isPresent()) {
             throw new RuntimeException("El usuario " + usuario.getEmail() + " ya está registrado");
         }
-        // Usamos el algoritmo de hash BCrypt a la contraseña ingresada antes de guardarla
+        // Usamos el algoritmo de hash BCrypt a la contraseña para que no sea legible en la BD
         String passwordEncriptada = passwordEncoder.encode(usuario.getPassword());
         usuario.setPassword(passwordEncriptada);
         // Guarda el nuevo registro en la base de datos con sus valores iniciales

@@ -1,28 +1,23 @@
 package com.grupo3.login.controller;
 
 import com.grupo3.login.dto.UsuarioLoginDTO;
-import com.grupo3.login.model.Usuario;
 import com.grupo3.login.service.UsuarioService;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
-import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
 
-@RestController
-@CrossOrigin(origins = "http://localhost:3000")
-@RequestMapping("/api/usuarios")
+@RestController // Define esta clase como un controlador de API que devuelve datos en formato JSON
+@CrossOrigin(origins = "http://localhost:3000") // Permite la comunicación con el frontend React
+@RequestMapping("/api/usuarios") // Define la ruta base para todas las peticiones de este controlador
 public class UsuarioController {
 
-    @Autowired
+    @Autowired // Inyecta la lógica de negocio para procesar las peticiones
     private UsuarioService usuarioService;
 
+    // Procesa el inicio de sesión validando los datos del DTO antes de entrar al método
+    // http://localhost:8091/api/usuarios/login
     @PostMapping("/login")
     public ResponseEntity<String> login (@Valid @RequestBody UsuarioLoginDTO loginDTO) {
         // Ejecuta la lógica de validación de identidad y credenciales en la capa de servicio
@@ -40,10 +35,13 @@ public class UsuarioController {
         return ResponseEntity.ok(resultado);
     }
 
+    // Endpoint para finalizar la sesión del usuario de forma segura
+    // http://localhost:8091/api/usuarios/logout
     @PostMapping("/logout")
     public ResponseEntity<String> logout(HttpSession session) {
         // Mandamos la orden al servicio para limpiar la identidad del usuario
         usuarioService.cerrarSesionActiva();
+        // Aplicamos una condición para verificar si existe una sesión web activa
         if (session != null) {
             session.invalidate(); // Rompe la sesión y borra todos sus datos vinculados
         }

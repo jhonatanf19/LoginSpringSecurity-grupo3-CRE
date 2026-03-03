@@ -29,10 +29,10 @@ public class Usuario {
     @Column(nullable = false)
     private Roles rol; // El Admin decidirá esto
 
-    @Column(name = "intentos_fallidos")
+    @Column(name = "intentos_fallidos") // Contador para controlar el bloqueo de seguridad
     private int intentosFallidos = 0;
 
-    @Column(name = "cuenta_bloqueada")
+    @Column(name = "cuenta_bloqueada") // Verifica si la cuenta está bloqueada o no
     private boolean cuentaBloqueada = false;
 
 }

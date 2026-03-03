@@ -7,9 +7,10 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 
-@Data
+@Data // Genera automáticamente getters, setters, toString, equals y hashCode
 public class UsuarioRegistroDTO {
 
+    // Validamos que el correo sea correcto antes de procesar el registro
     @Email(message = "Por favor, ingrese un correo electrónico válido")
     @NotBlank(message = "El email no puede estar vacío")
     private String email;
