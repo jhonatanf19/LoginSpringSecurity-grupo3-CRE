@@ -17,6 +17,9 @@ CREATE TABLE tbl_usuario (
 # Todos los registros de la tabla usuario
 SELECT * FROM tbl_usuario;
 
+# Borrar datos de la tabla usuario
+DELETE FROM tbl_usuario;
+
 # Creamos la tabla tokens_recuperacion_password
 CREATE TABLE tokens_recuperacion_password (
     id_token BIGINT AUTO_INCREMENT PRIMARY KEY,

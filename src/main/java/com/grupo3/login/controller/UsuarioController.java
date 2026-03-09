@@ -1,5 +1,6 @@
 package com.grupo3.login.controller;
 
+import com.grupo3.login.dto.LoginRespuestaDTO;
 import com.grupo3.login.dto.UsuarioLoginDTO;
 import com.grupo3.login.service.UsuarioService;
 import jakarta.servlet.http.HttpSession;
@@ -16,35 +17,29 @@ public class UsuarioController {
     @Autowired // Inyecta la lógica de negocio para procesar las peticiones
     private UsuarioService usuarioService;
 
-    // Procesa el inicio de sesión validando los datos del DTO antes de entrar al método
+    // Procesa el inicio de sesión devolviendo el Token, Email y Rol en un objeto JSON
     // http://localhost:8091/api/usuarios/login
     @PostMapping("/login")
-    public ResponseEntity<String> login (@Valid @RequestBody UsuarioLoginDTO loginDTO) {
-        // Ejecuta la lógica de validación de identidad y credenciales en la capa de servicio
-        String resultado = usuarioService.autenticar(loginDTO.getEmail(), loginDTO.getPassword());
-        // Si la cuenta está suspendida, se deniega el acceso con un estado 403 Forbidden
-        if (resultado.contains("Cuenta bloqueada")) {
-            return ResponseEntity.status(403).body(resultado);
+    public ResponseEntity<?> login (@Valid @RequestBody UsuarioLoginDTO loginDTO) {
+        try {
+            // Intentamos autenticar; si tiene éxito, recibimos el DTO con el Token
+            LoginRespuestaDTO respuesta = usuarioService.autenticar(loginDTO.getEmail(), loginDTO.getPassword());
+            // Retornamos el objeto con estado 200 OK. Spring lo convierte automáticamente a JSON
+            return ResponseEntity.ok(respuesta);
+        } catch (RuntimeException e) {
+            // Si el servicio lanzó una excepción (usuario no encontrado, clave incorrecta o bloqueo)
+            // capturamos el mensaje y lo enviamos con un estado 400 Bad Request
+            return ResponseEntity.badRequest().body(e.getMessage());
         }
-        // Si el mensaje NO contiene "Bienvenido", asumimos que es un error de login (400)
-        // Esto atrapará tanto el "No estás registrado" como los "intentos restantes"
-        if (!resultado.contains("Bienvenido")) {
-            return ResponseEntity.badRequest().body(resultado);
-        }
-        // Autenticación exitosa: confirma el acceso del usuario con un estado 200 OK
-        return ResponseEntity.ok(resultado);
     }
 
     // Endpoint para finalizar la sesión del usuario de forma segura
     // http://localhost:8091/api/usuarios/logout
     @PostMapping("/logout")
     public ResponseEntity<String> logout(HttpSession session) {
-        // Mandamos la orden al servicio para limpiar la identidad del usuario
+        // En JWT, el logout real lo hace el Frontend borrando el token de su memoria.
+        // Aquí solo notificamos al servicio si necesitas hacer alguna limpieza interna.
         usuarioService.cerrarSesionActiva();
-        // Aplicamos una condición para verificar si existe una sesión web activa
-        if (session != null) {
-            session.invalidate(); // Rompe la sesión y borra todos sus datos vinculados
-        }
         // Respondemos que todo salió bien
         return ResponseEntity.ok("Sesión cerrada exitosamente");
     }

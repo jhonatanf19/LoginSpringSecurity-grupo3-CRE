@@ -1,7 +1,9 @@
 package com.grupo3.login.service;
 
+import com.grupo3.login.dto.LoginRespuestaDTO;
 import com.grupo3.login.model.Usuario;
 import com.grupo3.login.repository.UsuarioRepository;
+import com.grupo3.login.security.ServicioJwt;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -16,6 +18,8 @@ public class UsuarioService {
     private UsuarioRepository usuarioRepository;
     @Autowired // Inyecta el codificador para manejar contraseñas de forma segura
     private BCryptPasswordEncoder passwordEncoder;
+    @Autowired // Inyecta el servicio especializado en la generación y gestión de tokens JWT
+    private ServicioJwt servicioJwt;
 
 
     public Optional<Usuario> buscarPorEmail (String email) {
@@ -36,34 +40,33 @@ public class UsuarioService {
         return usuarioRepository.save(usuario);
     }
 
-    public String autenticar (String email, String password) {
-        // Utilizamos el método buscarPorEmail del servicio para buscar al usuario
-        Optional<Usuario> usuarioEncontrado = buscarPorEmail(email);
-        // Si el Optional está vacío, significa que el correo no existe en el sistema
-        if (usuarioEncontrado.isEmpty()) {
-            return "No estás registrado en el sistema";
-        }
-        // Extraemos el objeto Usuario del contenedor Optional para trabajar con él
-        Usuario usuario = usuarioEncontrado.get();
-        // Valida el estado de la cuenta; si está bloqueada, detiene el proceso
+    public LoginRespuestaDTO autenticar (String email, String password) {
+        // Buscamos al usuario; si no existe, lanzamos una excepción de inmediato
+        Usuario usuario = usuarioRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("No estás registrado en el sistema"));
+        // Verificamos si la cuenta está bloqueada antes de intentar validar la contraseña
         if (usuario.isCuentaBloqueada()) {
-            return "Tu cuenta está bloqueada, contacte con el administrador";
+            throw new RuntimeException("Tu cuenta está bloqueada, contacte con el administrador");
         }
         // Compara la contraseña ingresada con la versión encriptada de la base de datos
         if (passwordEncoder.matches(password, usuario.getPassword())) {
             // En caso de éxito, reinicia el contador de errores y guarda los cambios
             usuario.setIntentosFallidos(0);
             usuarioRepository.save(usuario);
-            return "Bienvenido " + usuario.getEmail() + ", tu rol es " + usuario.getRol();
+            // PASO CLAVE: Generamos el token JWT usando nuestro servicio especializado
+            String token = servicioJwt.generarToken(usuario);
+            // Retornamos el DTO con toda la información que el Frontend (React) necesita guardar
+            return new LoginRespuestaDTO(token, usuario.getEmail(), usuario.getRol());
         } else {
             // Incrementa el historial de fallos y calcula los intentos restantes antes del bloqueo
             incrementarIntentos(usuario);
             int intentosRestantes = 3 - usuario.getIntentosFallidos();
             // Si el contador llegó a 3, informamos el bloqueo inmediato
             if (usuario.isCuentaBloqueada()) {
-                return "Superastes el límite de intentos, tu cuenta ha sido bloqueada";
+                throw new RuntimeException("Superaste el límite de intentos, tu cuenta ha sido bloqueada");
             }
-            return "Revise sus credenciales, le quedán " + intentosRestantes + " intentos";
+            // Si aún le quedan intentos, lanzamos el error con la cantidad restante
+            throw new RuntimeException("Revise sus credenciales, le quedan " + intentosRestantes + " intentos");
         }
 
     }
