@@ -24,32 +24,40 @@ public class FiltroJwt extends OncePerRequestFilter {
                                     HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
 
-        // 1. Extraer el encabezado "Authorization" de la petición
+        // Analizamos de forma interna si la petición entrante incluye el encabezado de autorización HTTP
         String encabezado = request.getHeader("Authorization");
 
+        // Verificamos que el encabezado exista y que empiece con la palabra "Bearer "
         if (encabezado != null && encabezado.startsWith("Bearer ")) {
+            // Extraemos únicamente la cadena del Token, eliminando el prefijo "Bearer " (7 caracteres)
             String token = encabezado.substring(7);
 
-            // 1. Usamos el método que acabamos de arreglar
+            // Usamos nuestra "llave secreta" para verificar si el token es auténtico y no ha expirado
             if (servicioJwt.validarToken(token)) {
+                // Si es válido, sacamos la información que guardamos dentro (Email y Rol)
                 String email = servicioJwt.extraerEmail(token);
                 String rol = servicioJwt.extraerRol(token);
 
-                // COLOCO EL MENSAJE AQUÍ 🚀
-                System.out.println("DEBUG - Email: " + email + " | Rol extraído: " + rol);
+                // Imprimimos en consola para confirmar que el filtro leyó el Token correctamente
+                System.out.println("Autenticación exitosa - Email: " + email + " | Rol: " + rol);
 
-                // 2. IMPORTANTE: Agregamos "ROLE_" para que .hasRole("ADMINISTRADOR") funcione
+                /* Spring Security exige que los roles empiecen con "ROLE_".
+                 * Si en la BD el rol es "ADMINISTRADOR", aquí lo convertimos en "ROLE_ADMINISTRADOR"
+                 * para que las reglas de acceso funcionen correctamente. */
                 SimpleGrantedAuthority autoridad = new SimpleGrantedAuthority("ROLE_" + rol);
 
+                // Creamos un objeto de "Identidad" con el email y el rol verificado
                 UsernamePasswordAuthenticationToken autenticacion =
                         new UsernamePasswordAuthenticationToken(email, null, List.of(autoridad));
 
-                // 3. Le decimos a Spring: "Este usuario es legal, déjalo pasar"
+                /* Registramos al cliente (ya sea Administrador o Usuario) en la "sesión actual" de Spring.
+                 * A partir de aquí, el sistema reconoce quién está operando y le otorga acceso a los
+                 * métodos protegidos según los permisos de su rol. */
                 SecurityContextHolder.getContext().setAuthentication(autenticacion);
             }
         }
 
-        // Continuar con los demás filtros de seguridad
+        // Continúa con los demás filtros de seguridad en el controller
         filterChain.doFilter(request, response);
     }
 

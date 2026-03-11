@@ -1,8 +1,6 @@
 package com.grupo3.login.dto;
 
 import com.grupo3.login.model.Roles;
-import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.NotBlank;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -12,16 +10,17 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor // Crea un constructor vacío
 public class LoginRespuestaDTO {
 
-    @NotBlank(message = "El token es obligatorio")
     // Es la "llave" JWT que el frontend guardará para identificarse en cada petición
     private String token;
 
-    @NotBlank(message = "El email es obligatorio para entrar")
-    @Email(message = "Formato de correo inválido")
-    // Validamos que el usuario ingrese un correo registrado en la BD
+    // Devuelve el correo del usuario registrado en la BD
     private String email;
 
     // Define el nivel de acceso del usuario para mostrar u ocultar dashboards en React
     private Roles rol;
 
 }
+
+/* Nota: No usamos anotaciones de validación (como @NotBlank) porque este es un DTO de salida.
+ * Su único propósito es entregar al Frontend el Token JWT para mantener la sesión activa,
+ * junto con el email y el rol para que React evalúe a qué Dashboard redirigir al usuario. */

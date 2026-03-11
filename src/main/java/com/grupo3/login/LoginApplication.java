@@ -31,7 +31,8 @@ public class LoginApplication {
                 // Guardamos al usuario en la base de datos
                 repository.save(admin);
                 // Mensaje de confirmación en la consola del servidor
-                System.out.println("Usuario administrador creado por defecto ✅");
+                System.out.println("Usuario administrador creado al iniciar ✅");
+                System.out.println("Acceso inicial -> Email: admin@gmail.com | Password: 12345678");
             }
         };
     }

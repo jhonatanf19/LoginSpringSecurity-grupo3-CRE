@@ -9,49 +9,54 @@ import org.springframework.stereotype.Service;
 import javax.crypto.SecretKey;
 import java.util.Date;
 
-@Service // Define esta clase como la capa de lógica de negocio.
+@Service // Clase encargada de la gestión de tokens para la seguridad del sistema.
 public class ServicioJwt {
 
-    // Esta es la "llave maestra". En un entorno real, no debe estar escrita aquí directamente.
+    // Firma digital única del servidor para garantizar que los tokens no sean manipulados
     private final SecretKey LLAVE_SECRETA = Keys.secretKeyFor(SignatureAlgorithm.HS256);
 
-    // Tiempo de vida del token (ejemplo: 2 horas)
+    // Tiempo de validez del token (2 horas antes de que el usuario deba loguearse de nuevo)
     private final long EXPIRACION = 7200000;
 
+    /* Genera un token JWT tras una autenticación exitosa.
+     * Incluye el email del usuario y su nivel de acceso (Rol). */
     public String generarToken(Usuario usuario) {
         return Jwts.builder()
-                .setSubject(usuario.getEmail()) // Quién es el dueño
-                .claim("Rol", usuario.getRol().name()) // Qué permisos tiene
-                .setIssuedAt(new Date()) // Cuándo se creó
-                .setExpiration(new Date(System.currentTimeMillis() + EXPIRACION)) // Cuándo vence
-                .signWith(LLAVE_SECRETA) // Firmamos con nuestra llave secreta
-                .compact();
+                .setSubject(usuario.getEmail()) // AQUI MEJORALO
+                .claim("Rol", usuario.getRol().name()) // AQUI MEJORALO
+                .setIssuedAt(new Date()) // Fecha de creación del Token
+                .setExpiration(new Date(System.currentTimeMillis() + EXPIRACION)) // Fecha de expiración del Token
+                .signWith(LLAVE_SECRETA) // Cifrado de seguridad con la llave secreta
+                .compact(); // Construcción final de la cadena de texto (Token)
     }
 
-    // 1. Extrae el email (subject) del token
+    // 1. Extrae el email del dueño del token para identificarlo en las peticiones
     public String extraerEmail(String token) {
         return extraerTodosLosClaims(token).getSubject();
     }
 
-    // Extrae el rol que guardamos en los claims personalizados
+    // 2. Extrae el rol que guardamos en el token para validar permisos de Administrador o Usuario
     public String extraerRol(String token) {
         return extraerTodosLosClaims(token).get("Rol", String.class);
     }
 
-    // 2. Verifica si el token ha expirado comparando fechas
+    // 3. Verifica si el token ha expirado comparando fechas
     public boolean esTokenExpirado(String token) {
         return extraerTodosLosClaims(token).getExpiration().before(new Date());
     }
 
-    // 3. Método privado para abrir el token y leer su contenido (Payload)
+    /* Proceso de decodificación: Abre el token usando la llave secreta para leer su contenido.
+     * Si la firma no coincide o el token es falso, este proceso fallará automáticamente. */
     private Claims extraerTodosLosClaims(String token) {
         return Jwts.parserBuilder()
-                .setSigningKey(LLAVE_SECRETA) // Usa tu llave maestra para validar la firma
+                .setSigningKey(LLAVE_SECRETA) // Usamos la llave para validar la firma
                 .build()
                 .parseClaimsJws(token)
                 .getBody();
     }
 
+    /* Validador de integridad: Verifica que el token sea auténtico y vigente.
+     * Devuelve true si el servidor reconoce la firma, de lo contrario devuelve false. */
     public boolean validarToken(String token) {
         try {
             // Esto intenta leer el token; si falla (por expiración o firma falsa), lanza excepción
@@ -61,7 +66,7 @@ public class ServicioJwt {
                     .parseClaimsJws(token);
             return true;
         } catch (Exception e) {
-            return false; // El token no es válido
+            return false;
         }
     }
 

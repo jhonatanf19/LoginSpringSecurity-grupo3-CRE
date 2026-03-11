@@ -37,8 +37,9 @@ public class UsuarioController {
     // http://localhost:8091/api/usuarios/logout
     @PostMapping("/logout")
     public ResponseEntity<String> logout(HttpSession session) {
-        // En JWT, el logout real lo hace el Frontend borrando el token de su memoria.
-        // Aquí solo notificamos al servicio si necesitas hacer alguna limpieza interna.
+        /* En la arquitectura JWT, el cierre de sesión real ocurre internamente en el
+         * código del Frontend al eliminar el Token. El usuario no verá este proceso.
+         * Aquí solo notificamos al sistema para realizar limpieza de datos. */
         usuarioService.cerrarSesionActiva();
         // Respondemos que todo salió bien
         return ResponseEntity.ok("Sesión cerrada exitosamente");

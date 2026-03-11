@@ -3,6 +3,7 @@ package com.grupo3.login.security;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -16,7 +17,7 @@ public class SecurityConfig {
     @Autowired // Inyectamos el filtro que creamos para validar los tokens JWT
     private FiltroJwt filtroJwt;
 
-    // Define el algoritmo de hash BCrypt para la protección y comparación de contraseñas
+    // Bean para encriptar contraseñas. Esto asegura que en la BD no se vea la clave real, sino un hash.
     @Bean
     public BCryptPasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
@@ -28,23 +29,25 @@ public class SecurityConfig {
         http
                 // Deshabilita la protección CSRF para facilitar el envío de peticiones desde Postman/React
                 .csrf(csrf -> csrf.disable())
-                // Configura la autenticación sin estado: el servidor no guarda sesiones, solo valida JWTs.
+                // Política Stateless: El servidor no guarda "recuerdos" del usuario. Cada petición debe validarse con el Token.
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        // Habilita el acceso público al endpoint de autenticación para el inicio de sesión
+
+                        // Rutas Abiertas: Habilita el acceso público al endpoint de autenticación para el inicio de sesión
                         .requestMatchers("/api/usuarios/**").permitAll()
-                        // Permitimos los endpoints de recuperación sin estar logueado
+                        // Recuperación: Acceso libre ya que el usuario no tiene sesión activa si olvidó su clave.
                         .requestMatchers("/api/recuperacion/**").permitAll()
-                        // Permite el acceso libre a los endpoints de administración de usuarios
+                        // Protección por Rol: Solo si el Token procesado internamente tiene el rol "ADMINISTRADOR".
                         .requestMatchers("/api/administrador/**").hasRole("ADMINISTRADOR")
-                        // Restringe cualquier otra ruta del sistema; requiere una sesión autenticada
+                        // Restricción general: Cualquier otra petición exige que el proceso de validación del Token sea exitoso.
                         .anyRequest().authenticated()
                 )
 
-                // Desactiva el formulario de inicio de sesión por defecto de Spring para usar controladores personalizados
+                // Bloqueamos las interfaces visuales por defecto de Spring para usar nuestras propias rutas internas.
                 .formLogin(form -> form.disable())
                 .logout(logout -> logout.disable())
-                // Añadimos el filtro personalizado aquí:
+                /* Conexión del Filtro: Insertamos nuestro validador de Tokens en la cadena de seguridad
+                 * para que analice cada petición de forma invisible antes de llegar a los controladores. */
                 .addFilterBefore(filtroJwt, org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter.class);
         return http.build();
     }
